@@ -16,6 +16,29 @@ namespace Yoakke.SynKit.Reporting.Present;
 /// </summary>
 public class TextDiagnosticsPresenter : IDiagnosticsPresenter
 {
+    // Merges source diagnostic informations that are exact duplicates of each other.
+    // Files are compared by path, matching how the printed groups are keyed.
+    private sealed class SourceDiagnosticInfoComparer : IEqualityComparer<SourceDiagnosticInfo>
+    {
+        public static readonly SourceDiagnosticInfoComparer Instance = new();
+
+        public bool Equals(SourceDiagnosticInfo? x, SourceDiagnosticInfo? y)
+        {
+            if (ReferenceEquals(x, y)) return true;
+            if (x is null || y is null) return false;
+            return string.Equals(x.Location.File?.Path, y.Location.File?.Path, StringComparison.Ordinal)
+                && x.Location.Range.Equals(y.Location.Range)
+                && x.Severity == y.Severity
+                && x.Message == y.Message;
+        }
+
+        public int GetHashCode(SourceDiagnosticInfo obj) => HashCode.Combine(
+            obj.Location.File?.Path,
+            obj.Location.Range,
+            obj.Severity,
+            obj.Message);
+    }
+
     private abstract class LinePrimitive
     {
     }
@@ -76,11 +99,15 @@ public class TextDiagnosticsPresenter : IDiagnosticsPresenter
         // error[CS123]: Some message
         this.WriteDiagnosticHead(diagnostic);
 
-        // Collect out source information grouped by the files and ordered by their positions
+        // Collect out source information, merge exact duplicates (keeping the first
+        // occurrence), group by the files and order by their positions.
+        // Files are identified by their path, so two ISourceFile instances that denote the
+        // same file merge into a single group.
         var sourceInfo = diagnostic.Information
             .OfType<SourceDiagnosticInfo>()
+            .Distinct(SourceDiagnosticInfoComparer.Instance)
             .OrderBy(si => si.Location.Range.Start)
-            .GroupBy(si => si.Location.File);
+            .GroupBy(si => si.Location.File?.Path, StringComparer.Ordinal);
         // Print the groups
         foreach (var info in sourceInfo) this.WriteSourceGroup(info);
 
@@ -258,26 +285,37 @@ public class TextDiagnosticsPresenter : IDiagnosticsPresenter
             var startColumn = this.buffer.CursorX;
             arrowHeadColumns.Add((startColumn, annot));
             if (annot.Severity != null) this.buffer.ForegroundColor = this.Style.GetSeverityColor(annot.Severity.Value);
-            for (; charIdx < annot.Location.Range.End.Column; ++charIdx)
+            var isZeroWidth = annot.Location.Range.End.Column <= annot.Location.Range.Start.Column;
+            if (isZeroWidth)
             {
-                if (charIdx < lineText.Length)
+                // Zero-width span (for example end-of-input or error recovery positions):
+                // draw a single marker so the annotated position stays visible
+                this.buffer.Write(arrowHead);
+            }
+            else
+            {
+                for (; charIdx < annot.Location.Range.End.Column; ++charIdx)
                 {
-                    // Still in range of the line
-                    var oldOffset = lineCur;
-                    this.AdvanceCursor(ref lineCur, lineText[charIdx]);
-                    // Fill with arrow head
-                    this.buffer.Fill(prefix.Length + oldOffset, this.buffer.CursorY, lineCur - oldOffset, 1, arrowHead);
-                    this.buffer.CursorX = prefix.Length + lineCur;
-                }
-                else
-                {
-                    // After the line
-                    this.buffer.Write(arrowHead);
+                    if (charIdx < lineText.Length)
+                    {
+                        // Still in range of the line
+                        var oldOffset = lineCur;
+                        this.AdvanceCursor(ref lineCur, lineText[charIdx]);
+                        // Fill with arrow head
+                        this.buffer.Fill(prefix.Length + oldOffset, this.buffer.CursorY, lineCur - oldOffset, 1, arrowHead);
+                        this.buffer.CursorX = prefix.Length + lineCur;
+                    }
+                    else
+                    {
+                        // After the line
+                        this.buffer.Write(arrowHead);
+                    }
                 }
             }
             var endColumn = this.buffer.CursorX;
-            // Recolor the source line too
-            if (annot.Severity != null) this.buffer.Recolor(startColumn, this.buffer.CursorY - 1, endColumn - startColumn, 1);
+            // Recolor the source line too, but only the characters the span actually covers:
+            // a zero-width span covers no source characters and must not stretch the line
+            if (annot.Severity != null && !isZeroWidth) this.buffer.Recolor(startColumn, this.buffer.CursorY - 1, endColumn - startColumn, 1);
         }
         // Now we are done with arrows in the line, it's time to do the arrow bodies downwards
         // The first one will have N, the last 0 length bodies, decreasing by one

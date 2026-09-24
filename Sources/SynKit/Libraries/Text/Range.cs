@@ -9,6 +9,12 @@ namespace Yoakke.SynKit.Text;
 /// <summary>
 /// An 2D interval of text positions with an inclusive starting position and an exclusive ending position.
 /// </summary>
+/// <remarks>
+/// A <see cref="Range"/> with <see cref="Start"/> equal to <see cref="End"/> is a valid
+/// zero-width (empty) range. Zero-width ranges are produced for example by end-of-input
+/// tokens and by error recovery, and they contain no <see cref="Position"/> and intersect
+/// nothing. Both endpoints are expressed in the units documented on <see cref="Position"/>.
+/// </remarks>
 public readonly record struct Range : IEquatable<Range>
 {
     /// <summary>

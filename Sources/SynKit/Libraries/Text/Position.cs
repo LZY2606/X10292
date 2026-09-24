@@ -9,8 +9,20 @@ namespace Yoakke.SynKit.Text;
 /// <summary>
 /// Represents 2D position inside some text.
 /// </summary>
+/// <remarks>
+/// The units of this type are defined uniformly for every consumer (hand-written and
+/// generated lexers, parsers and diagnostic renderers alike):
+/// <list type="bullet">
+/// <item>Lines are delimited by <c>\r\n</c>, <c>\r</c> or <c>\n</c>, each counting as exactly
+/// one line terminator, regardless of the platform default newline.</item>
+/// <item>Columns are counted in UTF-16 code units (C# <see cref="char"/>s). A Unicode scalar
+/// value outside the Basic Multilingual Plane - a surrogate pair - occupies 2 columns.</item>
+/// <item>A horizontal tab <c>\t</c> occupies exactly 1 column. Consumers that need display
+/// columns (tab stops) map character columns themselves.</item>
+/// </list>
+/// </remarks>
 /// <param name="Line">The 0-based line index.</param>
-/// <param name="Column">The 0-based column index.</param>
+/// <param name="Column">The 0-based column index, in UTF-16 code units.</param>
 public readonly record struct Position(int Line, int Column) : IComparable, IComparable<Position>
 {
     /// <inheritdoc/>

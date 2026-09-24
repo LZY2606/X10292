@@ -13,6 +13,11 @@ namespace Yoakke.SynKit.Lexer;
 /// <summary>
 /// An <see cref="ICharStream"/> that wraps a <see cref="TextReader"/>.
 /// </summary>
+/// <remarks>
+/// The stream consumes characters through <see cref="ISourceFile.Reader"/>, so the tracked
+/// <see cref="Position"/>s and the line table of the underlying <see cref="ISourceFile"/>
+/// always describe the same text with the same units (see <see cref="Position"/>).
+/// </remarks>
 public class TextReaderCharStream : ICharStream
 {
     /// <summary>
@@ -98,6 +103,9 @@ public class TextReaderCharStream : ICharStream
         // Windows-style, already advanced line at \r
         if (lastChar == '\r' && currentChar == '\n') return pos;
         if (currentChar == '\r' || currentChar == '\n') return pos.Newline();
+        // A tab is a regular character for position tracking: exactly 1 UTF-16 column.
+        // Display-width expansion (tab stops) is the renderer's concern.
+        if (currentChar == '\t') return pos.Advance();
         if (char.IsControl(currentChar)) return pos;
         return pos.Advance();
     }

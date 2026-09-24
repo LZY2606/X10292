@@ -13,13 +13,30 @@ namespace Yoakke.SynKit.Text;
 /// <summary>
 /// A source file implementation with <see cref="TextReader"/>s.
 /// </summary>
+/// <remarks>
+/// This type is the single authority on how source text is split into lines and how character
+/// offsets map to line/column positions. The exact source text is preserved verbatim in an
+/// internal buffer - including the original newline sequences - and every consumer
+/// (hand-written or generated lexers, parsers, diagnostic renderers) observes the same text
+/// through the same buffer:
+/// <list type="bullet">
+/// <item>The line terminators <c>\r\n</c>, <c>\r</c> and <c>\n</c> each count as exactly one
+/// line terminator. Terminators are never re-encoded to the platform default.</item>
+/// <item>Positions and columns are counted in UTF-16 code units (C# <see cref="char"/>s),
+/// which is what <see cref="Position.Column"/> measures. A Unicode scalar value outside the
+/// Basic Multilingual Plane (a surrogate pair) therefore occupies 2 columns.</item>
+/// <item>The reader returned by <see cref="Reader"/> is this instance itself, so consuming
+/// characters and querying lines can never diverge into separate interpretations of the
+/// same file.</item>
+/// </list>
+/// </remarks>
 public class SourceFile : TextReader, ISourceFile
 {
     /// <inheritdoc/>
     public string Path { get; }
 
     /// <inheritdoc/>
-    public TextReader Reader => this.underlying;
+    public TextReader Reader => this;
 
     /// <inheritdoc/>
     public int AvailableLines => this.lineStarts.Count;
@@ -32,6 +49,12 @@ public class SourceFile : TextReader, ISourceFile
     private int index;
     // The line start indices
     private List<int> lineStarts;
+    // Scratch for a line that is only partially read (for example because the underlying
+    // reader failed mid-line). This is not committed state: the partial content only becomes
+    // observable once the line is read completely and is committed atomically.
+    private readonly StringBuilder pendingLine = new();
+    // True, if the underlying reader has been fully consumed
+    private bool endOfSource;
     // If we have been disposed already
     private bool disposed;
 
@@ -60,10 +83,6 @@ public class SourceFile : TextReader, ISourceFile
         {
         }
         this.index = 0;
-
-        // this is to reset state of the reader to the "initial".
-        // I resort to this hack, since constructor from string pre-scan lines, but did not reset.
-        this.underlying = new StringReader(source);
     }
 
     /// <inheritdoc/>
@@ -165,16 +184,48 @@ public class SourceFile : TextReader, ISourceFile
     {
         while (this.lineStarts.Count < count)
         {
-            var line = this.underlying.ReadLine();
-            if (line == null) return false;
-            // There was a line to read
-            this.lineStarts.Add(this.sourceText.Length);
-            this.sourceText.AppendLine(line);
+            if (!this.ReadNextLine()) return false;
         }
         return true;
     }
 
-    private bool ReadNextLine() => this.EnsureLineCount(this.lineStarts.Count + 1);
+    private bool ReadNextLine()
+    {
+        if (this.endOfSource) return false;
+        // Only a completely read line is committed to the shared buffer and line table, so a
+        // failing underlying reader can not leave half-updated state behind and the read can
+        // simply be retried. The partial line is kept in pendingLine, so even a forward-only
+        // reader that already handed out characters of the incomplete line can be resumed.
+        while (true)
+        {
+            var next = this.underlying.Read();
+            if (next == -1)
+            {
+                this.endOfSource = true;
+                break;
+            }
+            var ch = (char)next;
+            this.pendingLine.Append(ch);
+            if (ch == '\n') break;
+            if (ch == '\r')
+            {
+                // \r\n counts as a single terminator
+                if (this.underlying.Peek() == '\n')
+                {
+                    // Consume first, append after, so a failure here can not duplicate it
+                    this.underlying.Read();
+                    this.pendingLine.Append('\n');
+                }
+                break;
+            }
+        }
+        if (this.pendingLine.Length == 0) return false;
+        // There was a line to read, commit it atomically
+        this.lineStarts.Add(this.sourceText.Length);
+        this.sourceText.Append(this.pendingLine);
+        this.pendingLine.Clear();
+        return true;
+    }
 
     private bool EnsureLength(int length)
     {

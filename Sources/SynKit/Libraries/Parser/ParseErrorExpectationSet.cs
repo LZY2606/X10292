@@ -12,68 +12,44 @@ using System.Text;
 
 namespace Yoakke.SynKit.Parser;
 
+// A set of expected inputs that preserves first-insertion order, so that merged parse
+// errors enumerate their expectations in a stable, deterministic order.
 internal class ParseErrorExpectationSet : ISet<object>
 {
-    private object? firstItem;
-    private HashSet<object>? elements;
+    private readonly List<object> elements = new();
 
     public ParseErrorExpectationSet(ISet<object> expected)
     {
-        if (expected.Count == 1)
-        {
-            this.firstItem = expected.First();
-        }
-        else
-        {
-            this.elements = [.. expected];
-        }
+        this.UnionWith(expected);
     }
 
     public ParseErrorExpectationSet(object expected)
     {
-        this.firstItem = expected;
+        this.elements.Add(expected);
     }
 
-    public int Count => this.elements is null ? this.firstItem is null ? 0 : 1 : this.elements.Count;
+    private ParseErrorExpectationSet()
+    {
+    }
+
+    public int Count => this.elements.Count;
 
     public bool IsReadOnly => true;
 
     public bool Add(object item)
     {
-        if (this.elements is not null)
-        {
-            return this.elements.Add(item);
-        }
-
-        if (this.firstItem is null)
-        {
-            this.firstItem = item;
-            return true;
-        }
-        else
-        {
-            if (this.firstItem == item) return false;
-            this.elements = new() { this.firstItem, item };
-            return true;
-        }
+        if (this.Contains(item)) return false;
+        this.elements.Add(item);
+        return true;
     }
     public void Clear()
     {
-        this.firstItem = null;
-        this.elements = null;
+        this.elements.Clear();
     }
-    public bool Contains(object item)
-    {
-        if (this.elements is not null)
-        {
-            return this.elements.Contains(item);
-        }
-
-        return this.firstItem == item;
-    }
-    public void CopyTo(object[] array, int arrayIndex) => throw new NotImplementedException();
+    public bool Contains(object item) => this.elements.Contains(item);
+    public void CopyTo(object[] array, int arrayIndex) => this.elements.CopyTo(array, arrayIndex);
     public void ExceptWith(IEnumerable<object> other) => throw new NotImplementedException();
-    public IEnumerator<object> GetEnumerator() => (this.elements is not null) ? this.elements.GetEnumerator() : new Enumerator(this.firstItem);
+    public IEnumerator<object> GetEnumerator() => this.elements.GetEnumerator();
     public void IntersectWith(IEnumerable<object> other) => throw new NotImplementedException();
     public bool IsProperSubsetOf(IEnumerable<object> other) => throw new NotImplementedException();
     public bool IsProperSupersetOf(IEnumerable<object> other) => throw new NotImplementedException();
@@ -83,76 +59,18 @@ internal class ParseErrorExpectationSet : ISet<object>
     public bool Remove(object item) => throw new NotImplementedException();
     public bool SetEquals(IEnumerable<object> other) => throw new NotImplementedException();
     public void SymmetricExceptWith(IEnumerable<object> other) => throw new NotImplementedException();
-    public void UnionWith(IEnumerable<object> other) => throw new NotImplementedException();
+    public void UnionWith(IEnumerable<object> other)
+    {
+        foreach (var item in other) this.Add(item);
+    }
 
     internal ParseErrorExpectationSet Merge(ParseErrorExpectationSet other)
     {
-        if (this.elements is not null)
-        {
-            var newExpected = this.ToHashSet();
-            newExpected.UnionWith(other);
-            return new ParseErrorExpectationSet(newExpected);
-        }
-
-        if (this.firstItem is null)
-        {
-            return other;
-        }
-
-        if (this.firstItem == other.firstItem)
-        {
-            return this;
-        }
-
-        {
-            var newExpected = this.ToHashSet();
-            newExpected.UnionWith(other);
-            return new ParseErrorExpectationSet(newExpected);
-        }
+        var newExpected = new ParseErrorExpectationSet();
+        newExpected.UnionWith(this);
+        newExpected.UnionWith(other);
+        return newExpected;
     }
     void ICollection<object>.Add(object item) => throw new NotImplementedException();
     IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
-    private struct Enumerator : IEnumerator<object>
-    {
-        private bool valid;
-        private readonly object? _current;
-        public Enumerator(object? value)
-        {
-            this._current = value;
-        }
-
-        public object Current
-        {
-            get
-            {
-                if (!this.valid)
-                {
-                    throw new InvalidOperationException("The enumerator is not valid.");
-                }
-
-                return this._current ?? throw new InvalidOperationException("The enumerator is not valid.");
-            }
-        }
-
-        object IEnumerator.Current => this.Current;
-
-        public void Dispose() { }
-        public bool MoveNext()
-        {
-            if (!this.valid)
-            {
-                this.valid = true;
-                return true;
-            }
-            else
-            {
-                this.valid = false;
-                return false;
-            }
-        }
-        public void Reset()
-        {
-            this.valid = false;
-        }
-    }
 }
