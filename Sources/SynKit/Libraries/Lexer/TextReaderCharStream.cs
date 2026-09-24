@@ -21,7 +21,7 @@ public class TextReaderCharStream : ICharStream
     public TextReader Underlying => this.SourceFile.Reader;
 
     /// <inheritdoc/>
-    public Position Position { get; private set; }
+    public Position Position => this.positionTracker.Position;
 
     /// <inheritdoc/>
     public bool IsEnd => !this.TryPeek(out _);
@@ -30,7 +30,7 @@ public class TextReaderCharStream : ICharStream
     public ISourceFile SourceFile => this.underlying;
 
     private readonly RingBuffer<char> peek = new();
-    private char prevChar;
+    private readonly PositionTracker positionTracker = new();
     private ISourceFile underlying;
 
     /// <summary>
@@ -85,22 +85,12 @@ public class TextReaderCharStream : ICharStream
     {
         if (!this.TryPeek(out ch)) return false;
         var current = this.peek.RemoveFront();
-        this.Position = NextPosition(this.Position, this.prevChar, current);
-        this.prevChar = current;
+        this.positionTracker.Consume(current);
         return true;
     }
 
     /// <inheritdoc/>
     public int Consume(int amount) => StreamExtensions.Consume(this, amount);
-
-    private static Position NextPosition(Position pos, char lastChar, char currentChar)
-    {
-        // Windows-style, already advanced line at \r
-        if (lastChar == '\r' && currentChar == '\n') return pos;
-        if (currentChar == '\r' || currentChar == '\n') return pos.Newline();
-        if (char.IsControl(currentChar)) return pos;
-        return pos.Advance();
-    }
 
     /// <inheritdoc/>
     public void Defer(char item) => throw new NotSupportedException();

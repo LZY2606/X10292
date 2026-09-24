@@ -162,8 +162,11 @@ internal class ColoredBuffer
     /// <param name="y">The y position of the cell to recolor.</param>
     public void Recolor(int x, int y)
     {
-        this.EnsureBuffer(x, y);
+        // Recoloring must not extend the buffer, otherwise it would leave stray
+        // whitespace behind the actual content
+        if (y < 0 || y >= this.lines.Count) return;
         var line = this.lines[y];
+        if (x < 0 || x >= line.Text.Length) return;
         line.Color[x] = (this.ForegroundColor, this.BackgroundColor);
     }
 
@@ -179,9 +182,12 @@ internal class ColoredBuffer
         for (var j = 0; j < height; ++j)
         {
             var yp = top + j;
-            this.EnsureBuffer(left + width - 1, yp);
+            // Recoloring must not extend the buffer, otherwise it would leave stray
+            // whitespace behind the actual content
+            if (yp < 0 || yp >= this.lines.Count) continue;
             var line = this.lines[yp];
-            for (var i = 0; i < width; ++i)
+            var maxWidth = Math.Min(width, line.Text.Length - left);
+            for (var i = 0; i < maxWidth; ++i)
             {
                 var xp = left + i;
                 line.Color[xp] = (this.ForegroundColor, this.BackgroundColor);

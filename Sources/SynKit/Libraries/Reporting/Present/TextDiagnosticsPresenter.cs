@@ -77,10 +77,13 @@ public class TextDiagnosticsPresenter : IDiagnosticsPresenter
         this.WriteDiagnosticHead(diagnostic);
 
         // Collect out source information grouped by the files and ordered by their positions
+        // NOTE: We group by the file path and not the file instance, as the path is the
+        // documented identity of an ISourceFile. Two distinct ISourceFile instances that share
+        // a path must still produce a single, deterministic group.
         var sourceInfo = diagnostic.Information
             .OfType<SourceDiagnosticInfo>()
             .OrderBy(si => si.Location.Range.Start)
-            .GroupBy(si => si.Location.File);
+            .GroupBy(si => si.Location.File?.Path);
         // Print the groups
         foreach (var info in sourceInfo) this.WriteSourceGroup(info);
 
@@ -131,7 +134,9 @@ public class TextDiagnosticsPresenter : IDiagnosticsPresenter
         // Generate all line primitives
         var linePrimitives = this.CollectLinePrimitives(infos).ToList();
         // Find the largest line index printed
-        var maxLineIndex = linePrimitives.OfType<SourceLine>().Select(l => l.Line).Max();
+        // NOTE: There might be no source lines at all (for example an empty file with an
+        // end-of-file annotation), in which case we fall back to a single character padding
+        var maxLineIndex = linePrimitives.OfType<SourceLine>().Select(l => l.Line).DefaultIfEmpty(0).Max();
         // Create a padding to fit all line numbers from the largest of the group
         var lineNumberPadding = new string(' ', (maxLineIndex + 1).ToString().Length);
 
@@ -258,7 +263,9 @@ public class TextDiagnosticsPresenter : IDiagnosticsPresenter
             var startColumn = this.buffer.CursorX;
             arrowHeadColumns.Add((startColumn, annot));
             if (annot.Severity != null) this.buffer.ForegroundColor = this.Style.GetSeverityColor(annot.Severity.Value);
-            for (; charIdx < annot.Location.Range.End.Column; ++charIdx)
+            // A zero-width range still gets a single arrow head, otherwise it would be invisible
+            var spanEndColumn = Math.Max(annot.Location.Range.End.Column, annot.Location.Range.Start.Column + 1);
+            for (; charIdx < spanEndColumn; ++charIdx)
             {
                 if (charIdx < lineText.Length)
                 {
@@ -370,6 +377,13 @@ public class TextDiagnosticsPresenter : IDiagnosticsPresenter
                 yield return new SourceLine { Source = sourceFile, Line = i };
                 // If this was an annotated line, yield the annotation
                 if (i == infoGroup.Key) yield return new AnnotationLine { AnnotatedLine = i, Annotations = infoGroup };
+            }
+            // The annotated line can be past the available source lines (for example a
+            // zero-width annotation at the very end of the file). The annotation must still
+            // be printed, otherwise the diagnostic would silently lose its information.
+            if (infoGroup.Key >= maxLineIndex)
+            {
+                yield return new AnnotationLine { AnnotatedLine = infoGroup.Key, Annotations = infoGroup };
             }
         }
     }
