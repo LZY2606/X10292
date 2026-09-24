@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="$(RootDir)\SynKit\Libraries\Automata\Automata.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,11 @@
+<!-- Example/Sample project settings -->
+<Project>
+  <Import Project="Shared.Build.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+</Project>

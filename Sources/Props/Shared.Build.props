@@ -1,0 +1,23 @@
+<!-- Shared settings among all props files -->
+<Project>
+  <PropertyGroup>
+    <!-- Language-level settings -->
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+
+    <!-- Analysis -->
+    <AnalysisLevel>latest</AnalysisLevel>
+    <WarningLevel>9999</WarningLevel>
+
+    <!-- Root namespace -->
+    <RootNamespace>Yoakke.$(MSBuildProjectName)</RootNamespace>
+    <RootDir Condition="$(SolutionDir) == ''">$(MSBuildThisFileDirectory)..\</RootDir>
+    <RootDir Condition="$(SolutionDir) != ''">$(SolutionDir)</RootDir>
+    
+    <!-- Strong name -->
+    <SignAssembly Condition="$(SignAssembly) == ''">true</SignAssembly>
+    <AssemblyOriginatorKeyFile>key.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+</Project>

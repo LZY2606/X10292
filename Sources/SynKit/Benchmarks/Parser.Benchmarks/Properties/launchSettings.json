@@ -1,0 +1,19 @@
+{
+  "profiles": {
+    "Parser.Benchmarks": {
+      "commandName": "Project"
+    },
+    "parser": {
+      "commandName": "Project",
+      "commandLineArgs": "parser"
+    },
+    "complex": {
+      "commandName": "Project",
+      "commandLineArgs": "complex"
+    },
+    "manual_complex": {
+      "commandName": "Project",
+      "commandLineArgs": "manual_complex"
+    }
+  }
+}

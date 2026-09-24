@@ -1,0 +1,25 @@
+name: 'Publish packages'
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deployment:
+    runs-on: windows-latest
+    steps:
+    - name: Clone the repo
+      uses: actions/checkout@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '8.0.407'
+    - name: Build and package
+      run: dotnet build Sources/Yoakke.sln --configuration Release /p:Version=${{ github.event.release.tag_name }} /p:PackageReleaseNotes="See https://github.com/LanguageDev/Yoakke/releases/tag/${{ github.event.release.tag_name }}"
+    - name: Upload to GitHub
+      uses: actions/upload-artifact@v2
+      with:
+        name: Yoakke
+        path: Sources/**/*${{ github.event.release.tag_name }}.nupkg
+    - name: Upload to NuGet.org
+      run: dotnet nuget push Sources/**/*${{ github.event.release.tag_name }}.nupkg --api-key ${{ secrets.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json --no-symbols true

@@ -1,0 +1,152 @@
+{
+  "projectName": "Yoakke",
+  "projectOwner": "LanguageDev",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": ["README.md"],
+  "imageSize": 100,
+  "commit": true,
+  "commitConvention": "none",
+  "badgeTemplate": "[![All Contributors](https://img.shields.io/badge/all_contributors-<%= contributors.length %>-orange.svg)](#contributors)",
+  "contributorTemplate": "<a href=\"<%= contributor.profile %>\"><img src=\"<%= contributor.avatar_url %>\" width=\"<%= options.imageSize %>px;\" alt=\"\"/><br /><sub><b><%= contributor.name %></b></sub></a>",
+  "contributors": [
+    {
+      "login": "LPeter1997",
+      "name": "LPeter1997",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7904867?v=4",
+      "profile": "https://github.com/LPeter1997",
+      "contributions": [
+        "projectManagement",
+        "ideas",
+        "code",
+        "doc",
+        "maintenance",
+        "infra",
+        "review",
+        "test"
+      ]
+    },
+    {
+      "login": "WhiteBlackGoose",
+      "name": "WhiteBlackGoose",
+      "avatar_url": "https://avatars.githubusercontent.com/u/31178401?v=4",
+      "profile": "https://github.com/WhiteBlackGoose",
+      "contributions": [
+        "infra",
+        "doc"
+      ]
+    },
+    {
+      "login": "ZacharyPatten",
+      "name": "Zachary Patten",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3385986?v=4",
+      "profile": "https://github.com/ZacharyPatten",
+      "contributions": [
+        "design",
+        "infra"
+      ]
+    },
+    {
+      "login": "skneko",
+      "name": "Neko",
+      "avatar_url": "https://avatars.githubusercontent.com/u/13376606?v=4",
+      "profile": "https://github.com/skneko",
+      "contributions": [
+        "ideas",
+        "code",
+        "test",
+        "userTesting",
+        "bug",
+        "question"
+      ]
+    },
+    {
+      "login": "hantatsang",
+      "name": "Sang",
+      "avatar_url": "https://avatars.githubusercontent.com/u/11912225?v=4",
+      "profile": "https://github.com/hantatsang",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "lucyelle",
+      "name": "lucyelle",
+      "avatar_url": "https://avatars.githubusercontent.com/u/35396043?v=4",
+      "profile": "https://github.com/lucyelle",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "FP5i",
+      "name": "Péter Fónad",
+      "avatar_url": "https://avatars.githubusercontent.com/u/11299637?v=4",
+      "profile": "https://github.com/FP5i",
+      "contributions": [
+        "doc",
+        "infra"
+      ]
+    },
+    {
+      "login": "kant2002",
+      "name": "Andrii Kurdiumov",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4257079?v=4",
+      "profile": "https://github.com/kant2002",
+      "contributions": [
+        "code",
+        "test"
+      ]
+    },
+    {
+      "login": "ForNeVeR",
+      "name": "Friedrich von Never",
+      "avatar_url": "https://avatars.githubusercontent.com/u/92793?v=4",
+      "profile": "https://github.com/ForNeVeR",
+      "contributions": [
+        "bug",
+        "ideas",
+        "userTesting"
+      ]
+    },
+    {
+      "login": "furesoft",
+      "name": "Chris",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4117602?v=4",
+      "profile": "https://github.com/furesoft",
+      "contributions": [
+        "bug",
+        "ideas"
+      ]
+    },
+    {
+      "login": "sharwell",
+      "name": "Sam Harwell",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1408396?v=4",
+      "profile": "https://github.com/sharwell",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "colejohnson66",
+      "name": "Cole Tobin",
+      "avatar_url": "https://avatars.githubusercontent.com/u/11381599?v=4",
+      "profile": "https://github.com/colejohnson66",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "eltociear",
+      "name": "Ikko Ashimine",
+      "avatar_url": "https://avatars.githubusercontent.com/u/22633385?v=4",
+      "profile": "https://github.com/eltociear",
+      "contributions": [
+        "doc"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "skipCi": true
+}

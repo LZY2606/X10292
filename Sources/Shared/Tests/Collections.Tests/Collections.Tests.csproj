@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="$(RootDir)\Shared\Libraries\Collections\Collections.csproj" />
+  </ItemGroup>
+</Project>
